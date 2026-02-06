@@ -19,28 +19,28 @@ extract/
 │   │   ├── core/           # 核心配置（环境变量、日志、安全）
 │   │   ├── db/             # 数据库层（SQLAlchemy + Alembic）
 │   │   ├── api/            # API 路由层
-│   │   ├── modules/         # 业务模块
+│   │   ├── modules/        # 业务模块
 │   │   ├── utils/          # 工具函数
-│   │   └── dependencies/    # 依赖注入
+│   │   └── dependencies/   # 依赖注入
 │   ├── tests/              # 测试用例
 │   ├── alembic/            # 数据库迁移
-│   ├── tools_config/        # 工具配置文件
-│   ├── requirements.txt     # Python 依赖
-│   └── Dockerfile         # Docker 配置
+│   ├── tools_config/       # 工具配置文件
+│   ├── requirements.txt    # Python 依赖
+│   └── Dockerfile          # Docker 配置
 │
 └── web/                    # React 前端应用
     ├── src/
     │   ├── components/      # 通用 UI 组件
-    │   ├── features/        # 业务功能模块
-    │   ├── layouts/         # 页面布局
-    │   ├── pages/           # 路由页面
-    │   ├── services/        # API 请求封装
-    │   ├── styles/          # 全局样式
-    │   ├── utils/           # 工具函数
-    │   ├── App.tsx          # 根组件
-    │   ├── main.tsx         # 应用入口
-    │   └── router.tsx       # 路由配置
-    ├── package.json         # Node 依赖
+    │   ├── features/       # 业务功能模块
+    │   ├── layouts/        # 页面布局
+    │   ├── pages/          # 路由页面
+    │   ├── services/       # API 请求封装
+    │   ├── styles/         # 全局样式
+    │   ├── utils/          # 工具函数
+    │   ├── App.tsx         # 根组件
+    │   ├── main.tsx        # 应用入口
+    │   └── router.tsx      # 路由配置
+    ├── package.json        # Node 依赖
     └── vite.config.ts      # Vite 配置
 ```
 
@@ -90,20 +90,6 @@ npm run dev
 
 访问前端应用：http://localhost:3000
 
-### Docker 部署
-
-```bash
-# 后端
-cd api
-docker build -t center-api .
-docker run -d -p 8000:8000 --name center-api center-api
-
-# 前端（需要单独配置）
-cd web
-docker build -t frontend .
-docker run -d -p 3000:3000 --name frontend frontend
-```
-
 ## 技术栈
 
 ### 后端
@@ -118,6 +104,9 @@ docker run -d -p 3000:3000 --name frontend frontend
 | httpx | 异步 HTTP 客户端 |
 | Pydantic | 数据验证和序列化 |
 | pytest | 测试框架 |
+| Pillow | 图像处理 |
+| numpy | 数值计算 |
+| onnxruntime | 模型推理 |
 
 ### 前端
 
@@ -129,8 +118,8 @@ docker run -d -p 3000:3000 --name frontend frontend
 | React Router | 路由管理 |
 | Tailwind CSS | 原子化 CSS 框架 |
 | Axios | HTTP 请求库 |
-| Zustand | 轻量级状态管理（已安装，暂未使用） |
-| React Query | 服务器状态管理（已安装，暂未使用） |
+| Zustand | 轻量级状态管理 |
+| @tanstack/react-query | 服务器状态管理 |
 | ESLint + Prettier | 代码规范和格式化 |
 
 ## 核心功能
@@ -142,6 +131,7 @@ docker run -d -p 3000:3000 --name frontend frontend
 - ✅ API 网关（统一代理工具请求）
 - ✅ 实时选区绘制（Canvas 交互）
 - ✅ 图片预处理（压缩、格式转换）
+- ✅ 抠图结果下载
 
 ### 规划中
 
@@ -169,6 +159,7 @@ docker run -d -p 3000:3000 --name frontend frontend
 - ✅ 组件文件使用 PascalCase 命名
 - ✅ 合理拆分 UI 组件和业务组件
 - ✅ 优先使用 Tailwind CSS utility classes
+- ✅ 提交前必须运行 `npm run validate`
 
 ## 测试
 
@@ -190,7 +181,9 @@ npm run validate
 
 - [后端文档](./api/README.md)
 - [前端文档](./web/README.md)
-- [集成规范](./api/docs/INTEGRATION_SPECIFICATION.md)
+- [后端集成规范](./api/docs/INTEGRATION_SPECIFICATION.md)
+- [前端开发规范](./web/dev.md)
+- [前端类型检查指南](./web/TYPE_CHECK_GUIDE.md)
 
 ## 许可证
 

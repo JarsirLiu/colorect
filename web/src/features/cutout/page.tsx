@@ -1,9 +1,7 @@
 import { useCutoutOperations } from './hooks/useCutoutOperations';
-import { WelcomeScreen } from './components/WelcomeScreen';
-import { EditorWorkspace } from './components/EditorWorkspace';
-import './page.css';
+import { UploadWelcome, EditorWorkspace } from './components';
 
-export const CutoutPage = () => {
+export const CutoutPage = (): JSX.Element => {
   const {
     imageUrl,
     resultImage,
@@ -22,7 +20,7 @@ export const CutoutPage = () => {
 
   if (!imageUrl && !resultImage && !hasEnteredEditor) {
     return (
-      <WelcomeScreen
+      <UploadWelcome
         onUpload={handleFileUpload}
         onPaste={handlePaste}
         fileInputRef={fileInputRef}

@@ -1,4 +1,6 @@
-import axios from 'axios'
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
+
+import { ApiError } from '@/types/api'
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -8,27 +10,31 @@ export const http = axios.create({
   },
 })
 
-// 请求拦截器
 http.interceptors.request.use(
-  (config) => {
-    // 如果是 FormData，删除 Content-Type，让浏览器自动设置（包括 boundary）
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
     return config
   },
-  (error) => {
+  (error: AxiosError) => {
     return Promise.reject(error)
   }
 )
 
-// 响应拦截器
 http.interceptors.response.use(
-  (response) => {
-    return response.data
-  },
-  (error) => {
+  (response) => response.data,
+  (error: AxiosError<{ message?: string; code?: string; details?: Record<string, unknown> }>) => {
     const message = error.response?.data?.message || error.message || '请求失败'
-    return Promise.reject(new Error(message))
+    const code = error.response?.data?.code
+    const statusCode = error.response?.status
+    const details = error.response?.data?.details
+
+    return Promise.reject(new ApiError(message, code ?? undefined, statusCode ?? undefined, details))
   }
 )

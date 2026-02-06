@@ -1,179 +1,191 @@
-import { useState, useRef, useEffect } from 'react';
-import { preprocessImage } from '../utils';
-import { uploadImage } from '../api';
+import { useState, useRef, useEffect, useCallback } from 'react'
 
-export function useCutoutOperations() {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [resultImage, setResultImage] = useState<string | null>(null);
-  const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasEnteredEditor, setHasEnteredEditor] = useState(false);
+import { preprocessImage } from '../utils'
+import { uploadImage } from '../api'
+import { useFileReader } from './useFileReader'
+import { cropImageToBoundingBox } from './useImageCrop'
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface UseCutoutOperationsReturn {
+  imageUrl: string | null
+  resultImage: string | null
+  isLoading: boolean
+  error: string | null
+  hasEnteredEditor: boolean
+  fileInputRef: React.RefObject<HTMLInputElement>
+  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handlePaste: (e: React.ClipboardEvent) => void
+  handleSegment: (bbox: { x: number; y: number; width: number; height: number } | null) => Promise<void>
+  handleDownload: () => void
+  handleReset: () => void
+  handleGoHome: () => void
+  setError: (error: string | null) => void
+}
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (resultImageUrl) {
-          URL.revokeObjectURL(resultImageUrl);
-          setResultImageUrl(null);
-        }
-        setImageUrl(event.target?.result as string);
-        setResultImage(null);
-        setError(null);
-        setHasEnteredEditor(true);
-      };
-      reader.readAsDataURL(file);
+export function useCutoutOperations(): UseCutoutOperationsReturn {
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [resultImage, setResultImage] = useState<string | null>(null)
+  const [rawResultUrl, setRawResultUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasEnteredEditor, setHasEnteredEditor] = useState(false)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const requestIdRef = useRef<number>(0)
+
+  const clearResultImage = useCallback((): void => {
+    if (rawResultUrl) {
+      URL.revokeObjectURL(rawResultUrl)
+      setRawResultUrl(null)
     }
-    e.target.value = '';
-  };
+    setResultImage(null)
+    setError(null)
+  }, [rawResultUrl])
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
+  const handleImageLoad = useCallback((dataUrl: string): void => {
+    clearResultImage()
+    setImageUrl(dataUrl)
+    setHasEnteredEditor(true)
+  }, [clearResultImage])
+
+  const { readFile } = useFileReader({ onFileLoaded: handleImageLoad })
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0]
+    if (file) {
+      readFile(file)
+    }
+    e.target.value = ''
+  }, [readFile])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent): void => {
+    const items = e.clipboardData?.items
+    if (!items) return
 
     for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+      const item = items[i]
       if (item.type.indexOf('image') !== -1) {
-        e.preventDefault();
-        const blob = item.getAsFile();
+        e.preventDefault()
+        const blob = item.getAsFile()
         if (blob) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            if (resultImageUrl) {
-              URL.revokeObjectURL(resultImageUrl);
-              setResultImageUrl(null);
-            }
-            setImageUrl(event.target?.result as string);
-            setResultImage(null);
-            setError(null);
-            setHasEnteredEditor(true);
-          };
-          reader.readAsDataURL(blob);
+          readFile(blob)
         }
-        break;
+        break
       }
     }
-  };
+  }, [readFile])
 
-  const handleSegment = async (
-    bbox: { x: number; y: number; width: number; height: number } | null
-  ) => {
-    if (!imageUrl) {
-      setError('请先上传图片');
-      return;
+  const loadImage = useCallback(async (imageUrl: string): Promise<{ image: HTMLImageElement; blob: Blob }> => {
+    const response = await fetch(imageUrl)
+    const blob = await response.blob()
+    const originalFile = new File([blob], `image_${Date.now()}.png`, { type: 'image/png' })
+
+    const result = await preprocessImage(originalFile, {
+      maxSize: 2048,
+      quality: 0.85,
+      format: 'image/jpeg'
+    })
+
+    const fullResultBlob = await uploadImage(result.file)
+    const fullResultDataUrl = URL.createObjectURL(fullResultBlob)
+
+    const fullImage = new Image()
+    fullImage.crossOrigin = 'anonymous'
+    fullImage.src = fullResultDataUrl
+
+    const cleanup = (): void => {
+      URL.revokeObjectURL(fullResultDataUrl)
     }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const originalFile = new File([blob], `image_${Date.now()}.png`, { type: 'image/png' });
-
-      const result = await preprocessImage(originalFile, {
-        maxSize: 2048,
-        quality: 0.85,
-        format: 'image/jpeg'
-      });
-
-      const fullResultBlob = await uploadImage(result.file);
-
-      const fullResultDataUrl = URL.createObjectURL(new Blob([fullResultBlob as unknown as Blob], { type: 'image/png' }));
-
-      const fullImage = new Image();
-      fullImage.crossOrigin = 'anonymous';
-      fullImage.src = fullResultDataUrl;
-
       await new Promise<void>((resolve, reject) => {
-        fullImage.onload = () => resolve();
-        fullImage.onerror = () => reject(new Error('抠图结果加载失败'));
-      });
+        fullImage.onload = (): void => resolve()
+        fullImage.onerror = (): void => reject(new Error('抠图结果加载失败'))
+      })
 
-      if (bbox && bbox.width >= 10 && bbox.height >= 10) {
-        const cropCanvas = document.createElement('canvas');
-        const width = Math.round(bbox.width);
-        const height = Math.round(bbox.height);
-        const x = Math.round(bbox.x);
-        const y = Math.round(bbox.y);
+      return { image: fullImage, blob: fullResultBlob }
+    } catch (error) {
+      cleanup()
+      throw error
+    }
+  }, [])
 
-        cropCanvas.width = width;
-        cropCanvas.height = height;
-        const ctx = cropCanvas.getContext('2d');
+  const processSegmentResult = useCallback((
+    image: HTMLImageElement,
+    blob: Blob,
+    dataUrl: string,
+    bbox: { x: number; y: number; width: number; height: number } | null
+  ): void => {
+    if (bbox && bbox.width >= 10 && bbox.height >= 10) {
+      const croppedDataUrl = cropImageToBoundingBox(image, bbox)
+      clearResultImage()
+      setResultImage(croppedDataUrl)
+      setTimeout(() => URL.revokeObjectURL(dataUrl), 1000)
+    } else {
+      const newResultUrl = URL.createObjectURL(blob)
+      clearResultImage()
+      setRawResultUrl(newResultUrl)
+      setResultImage(newResultUrl)
+      URL.revokeObjectURL(dataUrl)
+    }
+  }, [clearResultImage])
 
-        if (!ctx) {
-          throw new Error('无法获取 Canvas 上下文');
-        }
+  const handleSegment = useCallback(async (
+    bbox: { x: number; y: number; width: number; height: number } | null
+  ): Promise<void> => {
+    if (!imageUrl) {
+      setError('请先上传图片')
+      return
+    }
 
-        ctx.drawImage(fullImage, x, y, width, height, 0, 0, width, height);
+    const currentRequestId = ++requestIdRef.current
+    setIsLoading(true)
+    setError(null)
 
-        const croppedDataUrl = cropCanvas.toDataURL('image/png');
-
-        if (resultImageUrl) {
-          URL.revokeObjectURL(resultImageUrl);
-        }
-        URL.revokeObjectURL(fullResultDataUrl);
-
-        setResultImage(croppedDataUrl);
-        setResultImageUrl(null);
-      } else {
-        const resultBlob = new Blob([fullResultBlob as unknown as Blob], { type: 'image/png' });
-        if (resultImageUrl) {
-          URL.revokeObjectURL(resultImageUrl);
-        }
-        const newResultUrl = URL.createObjectURL(resultBlob);
-        setResultImageUrl(newResultUrl);
-        setResultImage(newResultUrl);
-        URL.revokeObjectURL(fullResultDataUrl);
+    try {
+      const { image, blob } = await loadImage(imageUrl)
+      
+      if (currentRequestId !== requestIdRef.current) {
+        return
       }
-    } catch {
-      setError('图像处理失败，请重试');
+      
+      processSegmentResult(image, blob, image.src, bbox)
+    } catch (error) {
+      console.error('抠图处理失败:', error)
+      setError('图像处理失败，请重试')
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setIsLoading(false)
+      }
     }
-  };
+  }, [imageUrl, loadImage, processSegmentResult])
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (resultImage) {
-      const link = document.createElement('a');
-      link.href = resultImage;
-      link.download = 'segmented_image.png';
-      link.click();
+      const link = document.createElement('a')
+      link.href = resultImage
+      link.download = 'segmented_image.png'
+      link.click()
     }
-  };
+  }, [resultImage])
 
-  const handleReset = () => {
-    setImageUrl(null);
-    if (resultImageUrl) {
-      URL.revokeObjectURL(resultImageUrl);
-      setResultImageUrl(null);
-    }
-    setResultImage(null);
-    setError(null);
-  };
+  const handleReset = useCallback(() => {
+    setImageUrl(null)
+    clearResultImage()
+  }, [clearResultImage])
 
-  const handleGoHome = () => {
-    setHasEnteredEditor(false);
-    setImageUrl(null);
-    if (resultImageUrl) {
-      URL.revokeObjectURL(resultImageUrl);
-      setResultImageUrl(null);
-    }
-    setResultImage(null);
-    setError(null);
-  };
+  const handleGoHome = useCallback(() => {
+    setHasEnteredEditor(false)
+    setImageUrl(null)
+    clearResultImage()
+  }, [clearResultImage])
 
   useEffect(() => {
-    return () => {
-      if (resultImageUrl) {
-        URL.revokeObjectURL(resultImageUrl);
+    return (): void => {
+      if (rawResultUrl) {
+        URL.revokeObjectURL(rawResultUrl)
       }
-    };
-  }, [resultImageUrl]);
+    }
+  }, [rawResultUrl])
 
   return {
     imageUrl,
@@ -189,5 +201,5 @@ export function useCutoutOperations() {
     handleReset,
     handleGoHome,
     setError
-  };
+  }
 }

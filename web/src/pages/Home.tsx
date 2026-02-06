@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export const Home = () => {
+export const Home = (): JSX.Element => {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
