@@ -1,7 +1,8 @@
 """
 工具管理模型
 """
-from sqlalchemy import Column, String, Integer, DateTime, JSON, Index
+from sqlalchemy import JSON, Column, Index, String
+
 from app.db.base import BaseModel, TimestampMixin
 
 

@@ -1,9 +1,10 @@
 """
 工具管理 Pydantic 模型
 """
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any, Optional
+
+from pydantic import BaseModel, Field
 
 
 # ============ 请求模型 ============
@@ -13,12 +14,12 @@ class ToolUsageCreate(BaseModel):
     tool_id: str = Field(..., description="工具ID")
     tool_name: str = Field(..., description="工具名称")
     anonymous_id: Optional[str] = Field(None, description="匿名用户ID")
-    extra_data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="额外数据")
+    extra_data: Optional[dict[str, Any]] = Field(default_factory=dict, description="额外数据")
 
 
 class ToolUsageUpdate(BaseModel):
     """工具使用记录更新"""
-    extra_data: Optional[Dict[str, Any]] = Field(None, description="额外数据")
+    extra_data: Optional[dict[str, Any]] = Field(None, description="额外数据")
 
 
 # ============ 响应模型 ============
@@ -31,7 +32,7 @@ class ToolUsageResponse(BaseModel):
     anonymous_id: Optional[str]
     ip_address: str
     user_agent: Optional[str]
-    extra_data: Dict[str, Any]
+    extra_data: dict[str, Any]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -45,16 +46,16 @@ class ToolConfig(BaseModel):
     name: str
     description: str
     category: str
-    tags: List[str]
+    tags: list[str]
     enabled: bool
-    development: Dict[str, Any]
-    production: Optional[Dict[str, Any]] = None
+    development: dict[str, Any]
+    production: Optional[dict[str, Any]] = None
 
 
 class ToolListResponse(BaseModel):
     """工具列表响应"""
     success: bool = Field(..., description="是否成功")
-    tools: List[ToolConfig] = Field(..., description="工具列表")
+    tools: list[ToolConfig] = Field(..., description="工具列表")
 
 
 class ToolDetailResponse(BaseModel):

@@ -1,10 +1,9 @@
 """
 通用依赖注入函数
 """
-from fastapi import Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Request
+
 from app.db.session import get_db
-from app.core.logging import logger
 
 
 async def get_client_ip(request: Request) -> str:
@@ -18,10 +17,7 @@ async def get_client_ip(request: Request) -> str:
         str: IP 地址
     """
     x_forwarded_for = request.headers.get("x-forwarded-for")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0].strip()
-    else:
-        ip = request.client.host
+    ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
     return ip
 
 

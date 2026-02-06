@@ -1,11 +1,13 @@
 """
 Alembic 环境配置
 """
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from alembic import context
 import sys
+from logging.config import fileConfig
 from pathlib import Path
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
 
 # 添加项目根目录到 sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -16,6 +18,7 @@ from app.db.base import Base
 
 # 导入所有模型
 from app.modules.tools.models import ToolUsage  # noqa
+
 
 # Alembic Config 对象
 config = context.config

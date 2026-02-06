@@ -1,16 +1,17 @@
 """
 FastAPI 主应用入口
 """
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import logging
 
+from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.init_db import init_db
-from app.api.v1.api import api_router
+
 
 # 配置日志
 logger = setup_logging()
@@ -18,10 +19,18 @@ logger = setup_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期管理"""
-    from app.modules.cutout.router import _cutout_service
+    """
+    应用生命周期管理
 
+    统一管理所有服务的初始化和清理：
+    - 数据库初始化
+    - 模型加载器初始化
+    - 业务服务初始化
+    - 优雅关闭资源
+    """
+    # ============================================
     # 启动时
+    # ============================================
     logger.info("Starting Center API...")
 
     # 初始化数据库
@@ -32,13 +41,43 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database: {e}")
         raise
 
+    # 初始化基础设施
+    try:
+        from app.infrastructure.models import ModelLoader
+        from app.modules.cutout.service import CutoutService
+
+        # 创建模型加载器（全局单例）
+        model_loader = ModelLoader()
+        app.state.model_loader = model_loader
+        logger.info("ModelLoader initialized")
+
+        # 初始化抠图服务并存储到 app.state
+        cutout_service = CutoutService(model_loader=model_loader)
+        app.state.cutout_service = cutout_service
+        logger.info("CutoutService initialized")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize services: {e}")
+        raise
+
+    logger.info("All services initialized successfully")
+
     yield
 
-    # 关闭时清理模型资源
+    # ============================================
+    # 关闭时
+    # ============================================
     logger.info("Shutting down Center API...")
-    if _cutout_service._session is not None:
-        await _cutout_service.cleanup()
-        logger.info("Model resources released")
+
+    # 清理模型资源
+    try:
+        model_loader = app.state.model_loader
+        await model_loader.cleanup()
+        logger.info("Model resources cleaned up")
+    except Exception as e:
+        logger.error(f"Failed to cleanup model loader: {e}")
+
+    logger.info("Shutdown completed")
 
 
 # 创建 FastAPI 应用
@@ -112,5 +151,5 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.LOG_LEVEL == "DEBUG",
-        workers=settings.WORKERS if settings.LOG_LEVEL != "DEBUG" else 1
+        workers=1  # 单进程，避免重复加载模型
     )

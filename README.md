@@ -28,20 +28,36 @@ extract/
 │   ├── requirements.txt    # Python 依赖
 │   └── Dockerfile          # Docker 配置
 │
-└── web/                    # React 前端应用
-    ├── src/
-    │   ├── components/      # 通用 UI 组件
-    │   ├── features/       # 业务功能模块
-    │   ├── layouts/        # 页面布局
-    │   ├── pages/          # 路由页面
-    │   ├── services/       # API 请求封装
-    │   ├── styles/         # 全局样式
-    │   ├── utils/          # 工具函数
-    │   ├── App.tsx         # 根组件
-    │   ├── main.tsx        # 应用入口
-    │   └── router.tsx      # 路由配置
-    ├── package.json        # Node 依赖
-    └── vite.config.ts      # Vite 配置
+├── web/                    # React 前端应用
+│   ├── src/
+│   │   ├── components/      # 通用 UI 组件
+│   │   ├── features/       # 业务功能模块
+│   │   ├── layouts/        # 页面布局
+│   │   ├── pages/          # 路由页面
+│   │   ├── services/       # API 请求封装
+│   │   ├── styles/         # 全局样式
+│   │   ├── utils/          # 工具函数
+│   │   ├── App.tsx         # 根组件
+│   │   ├── main.tsx        # 应用入口
+│   │   └── router.tsx      # 路由配置
+│   ├── package.json        # Node 依赖
+│   └── vite.config.ts      # Vite 配置
+│
+├── docker/                 # Docker 部署配置
+│   ├── README.md           # Docker 部署说明
+│   ├── docker-compose.yml  # Docker Compose 配置
+│   ├── .env                # 环境变量配置
+│   ├── deploy.sh           # Linux/Mac 部署脚本
+│   ├── deploy.bat          # Windows 部署脚本
+│   └── nginx/              # Nginx 配置目录
+│       ├── nginx.conf      # Nginx 主配置
+│       ├── conf.d/         # 站点配置
+│       ├── sites-available/# 可用站点配置
+│       ├── snippets/       # 配置片段
+│       └── ssl/            # SSL 证书目录
+│
+├── DEPLOYMENT.md           # 生产环境部署指南（非 Docker）
+└── README.md               # 项目说明文档
 ```
 
 ## 快速开始
@@ -51,8 +67,11 @@ extract/
 - Python 3.9+
 - Node.js 18+
 - SQLite 3+
+- Docker 20.10+（生产环境）
 
-### 后端启动
+## 本地启动（开发环境）
+
+### 1. 启动后端
 
 ```bash
 cd api
@@ -71,9 +90,7 @@ cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-访问 API 文档：http://localhost:8000/docs
-
-### 前端启动
+### 2. 启动前端
 
 ```bash
 cd web
@@ -88,7 +105,49 @@ cp .env.example .env
 npm run dev
 ```
 
-访问前端应用：http://localhost:3000
+### 3. 访问应用
+
+- **前端**: http://localhost:3000
+- **API**: http://localhost:8000
+- **API 文档**: http://localhost:8000/docs
+
+## 生产启动（Docker部署）
+
+### 1. 构建前端
+
+```bash
+cd web
+npm install
+npm run build
+```
+
+### 2. 启动服务（后端 + Nginx）
+
+```bash
+cd docker
+docker-compose up -d --build
+```
+
+### 3. 查看日志
+
+```bash
+# 查看所有服务日志
+docker-compose logs -f
+
+# 查看特定服务日志
+docker-compose logs -f api
+docker-compose logs -f nginx
+```
+
+### 4. 访问应用
+
+- **前端**: http://服务器IP
+- **API**: http://服务器IP/api
+- **API 文档**: http://服务器IP/docs
+
+**说明**：后端和 nginx 都在 Docker 中运行，通过 docker-compose 统一管理。
+
+详细的 Docker 部署说明请参考 [docker/README.md](./docker/README.md)
 
 ## 技术栈
 
@@ -181,6 +240,8 @@ npm run validate
 
 - [后端文档](./api/README.md)
 - [前端文档](./web/README.md)
+- [Docker 部署指南](./docker/README.md)（推荐）
+- [生产环境部署指南](./DEPLOYMENT.md)（非 Docker）
 - [后端集成规范](./api/docs/INTEGRATION_SPECIFICATION.md)
 - [前端开发规范](./web/dev.md)
 - [前端类型检查指南](./web/TYPE_CHECK_GUIDE.md)

@@ -1,9 +1,11 @@
 """
 HTTP 客户端工具
 """
-import httpx
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Optional
+
+import httpx
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,9 @@ class HTTPClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        json: Optional[dict[str, Any]] = None,
         data: Optional[bytes] = None
     ) -> httpx.Response:
         """

@@ -1,9 +1,11 @@
 """
 工具管理 CRUD 操作
 """
-from typing import List, Optional
+from typing import Optional
+
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+
 from app.modules.tools.models import ToolUsage
 
 
@@ -58,7 +60,7 @@ class ToolUsageCRUD:
         db: AsyncSession,
         tool_id: str,
         limit: int = 100
-    ) -> List[ToolUsage]:
+    ) -> list[ToolUsage]:
         """
         根据工具ID获取使用记录
 
@@ -83,7 +85,7 @@ class ToolUsageCRUD:
         db: AsyncSession,
         skip: int = 0,
         limit: int = 100
-    ) -> List[ToolUsage]:
+    ) -> list[ToolUsage]:
         """
         获取多条使用记录
 

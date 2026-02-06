@@ -4,8 +4,10 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any, Optional
+
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +17,9 @@ class ToolService:
 
     def __init__(self):
         self.tools_config_path = Path(settings.TOOLS_CONFIG_PATH)
-        self._tools_cache: Optional[List[Dict[str, Any]]] = None
+        self._tools_cache: Optional[list[dict[str, Any]]] = None
 
-    def load_tools(self) -> List[Dict[str, Any]]:
+    def load_tools(self) -> list[dict[str, Any]]:
         """
         加载所有工具配置
 
@@ -36,20 +38,20 @@ class ToolService:
         # 扫描 tools_config 目录下的所有 JSON 配置文件
         for config_file in self.tools_config_path.glob("*.json"):
             try:
-                with open(config_file, 'r', encoding='utf-8') as f:
+                with open(config_file, encoding='utf-8') as f:
                     config = json.load(f)
                     if config.get('enabled', True):
                         tools.append(config)
                         logger.info(f"Loaded tool: {config.get('name')} from {config_file.name}")
             except json.JSONDecodeError as e:
                 logger.error(f"Error loading config {config_file.name}: {e}")
-            except IOError as e:
+            except OSError as e:
                 logger.error(f"Error reading config file {config_file.name}: {e}")
 
         self._tools_cache = tools
         return tools
 
-    def get_tool_by_id(self, tool_id: str) -> Optional[Dict[str, Any]]:
+    def get_tool_by_id(self, tool_id: str) -> Optional[dict[str, Any]]:
         """
         根据 tool_id 获取工具配置
 

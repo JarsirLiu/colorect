@@ -1,18 +1,14 @@
 """
 工具管理 API 路由
 """
-from fastapi import APIRouter, HTTPException, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
-from app.dependencies.deps import get_db, get_client_ip, get_user_agent
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.dependencies.deps import get_client_ip, get_db, get_user_agent
+from app.modules.tools.schemas import ToolDetailResponse, ToolListResponse, ToolRefreshResponse
 from app.modules.tools.service import tool_service
-from app.modules.tools.schemas import (
-    ToolListResponse,
-    ToolDetailResponse,
-    ToolRefreshResponse,
-    ToolUsageCreate
-)
+
 
 router = APIRouter(prefix="/api/tools", tags=["工具管理"])
 
@@ -91,11 +87,6 @@ async def record_usage(
     """
     try:
         from app.modules.tools.crud import tool_usage_crud
-        from app.modules.stats.service import stats_service
-        from app.modules.tools.models import ToolUsage
-
-        # 解析请求体
-        import json
         data = await request.json()
 
         tool_id = data.get("tool_id")
@@ -106,11 +97,9 @@ async def record_usage(
         if not tool_id or not tool_name:
             raise HTTPException(status_code=400, detail="tool_id and tool_name are required")
 
-        # 获取客户端信息
         ip_address = get_client_ip(request)
         user_agent = get_user_agent(request)
 
-        # 创建使用记录
         usage = await tool_usage_crud.create(
             db=db,
             tool_id=tool_id,
@@ -121,9 +110,6 @@ async def record_usage(
             extra_data=extra_data
         )
 
-        # 更新每日统计
-        await stats_service.update_daily_stats(db, tool_id, tool_name)
-
         await db.commit()
 
         return {
@@ -132,6 +118,8 @@ async def record_usage(
         }
 
     except HTTPException:
+        await db.rollback()
         raise
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

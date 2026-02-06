@@ -1,0 +1,53 @@
+services:
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    container_name: extract-api
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WORKERS=4
+      - DATABASE_URL=sqlite+aiosqlite:///./data/app.db
+      - LOG_LEVEL=INFO
+      - TOOLS_CONFIG_PATH=tools_config
+      - CORS_ORIGINS=*
+    volumes:
+      - ../api/data:/app/data
+      - ../api/logs:/app/logs
+      - ../api/tools_config:/app/tools_config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: extract-nginx
+    ports:
+      - "80:80"
+      # HTTPS 端口（有域名后取消注释）
+      # - "443:443"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/mime.types:/etc/nginx/mime.types:ro
+      - ./nginx/fastcgi_params:/etc/nginx/fastcgi_params:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/sites-available:/etc/nginx/sites-available:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      # SSL 证书目录（有域名后取消注释，并放置证书文件）
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ../web/dist:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+networks:
+  default:
+    name: extract-network

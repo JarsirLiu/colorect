@@ -57,7 +57,7 @@ export const SelectionModeSwitch = ({ mode, setMode }: SelectionModeSwitchProps)
           <div className="relative z-10">
             <div className={`font-black text-[13px] tracking-tight ${mode === 'rect' ? 'text-white' : 'text-gray-900'}`}>智能框选</div>
             <div className={`text-[10px] mt-0.5 font-medium leading-tight ${mode === 'rect' ? 'text-blue-100' : 'text-gray-400'}`}>
-              快捷物体识别，AI 自动边缘优化
+              快捷物体识别，自动识别框内素材
             </div>
           </div>
           {mode === 'rect' && (
@@ -83,7 +83,7 @@ export const SelectionModeSwitch = ({ mode, setMode }: SelectionModeSwitchProps)
           <div className="relative z-10">
             <div className={`font-black text-[13px] tracking-tight ${mode === 'contour' ? 'text-white' : 'text-gray-900'}`}>自由勾勒</div>
             <div className={`text-[10px] mt-0.5 font-medium leading-tight ${mode === 'contour' ? 'text-blue-100' : 'text-gray-400'}`}>
-              精细边缘处理，支持复杂背景分离
+              画笔自由勾勒，支持复杂背景分离
             </div>
           </div>
           {mode === 'contour' && (
