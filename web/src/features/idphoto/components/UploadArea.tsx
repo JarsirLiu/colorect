@@ -11,16 +11,15 @@ export const UploadArea = ({
   onFileUpload,
   fileInputRef,
 }: UploadAreaProps): JSX.Element => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (file) {
       onFileUpload(file);
     }
-    // 重置 input，允许重复上传同一文件
     e.target.value = '';
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent): void => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
@@ -28,7 +27,7 @@ export const UploadArea = ({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent): void => {
     e.preventDefault();
   };
 
@@ -49,7 +48,7 @@ export const UploadArea = ({
         上传照片
       </h3>
       <p className="text-gray-400 text-sm mb-6">
-        点击或拖拽上传，支持 JPG、PNG 格式
+        拖拽、粘贴（Ctrl+V）或点击上传，支持 JPG、PNG 格式
       </p>
       <input
         ref={fileInputRef}

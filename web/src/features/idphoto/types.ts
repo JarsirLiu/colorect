@@ -10,7 +10,15 @@ export type BgColor = 'white' | 'blue' | 'red';
 /**
  * 证件照尺寸选项
  */
-export type PhotoSize = '1inch' | '2inch' | 'small' | 'big';
+export type PhotoSize =
+  | '1inch'
+  | '2inch'
+  | 'small'
+  | 'big'
+  | 'large1inch'
+  | 'small1inch'
+  | 'large2inch'
+  | 'small2inch';
 
 /**
  * 背景颜色配置
@@ -28,8 +36,8 @@ export interface BgColorConfig {
 export interface PhotoSizeConfig {
   value: PhotoSize;
   label: string;
-  size: { width: number; height: number }; // 像素尺寸
-  realSize: string; // 实际尺寸说明
+  size: { width: number; height: number };
+  realSize: string;
 }
 
 /**

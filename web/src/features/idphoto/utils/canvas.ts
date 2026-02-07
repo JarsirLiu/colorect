@@ -19,7 +19,7 @@ export const resizeImage = async (
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
-    img.onload = () => {
+    img.onload = (): void => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -67,7 +67,7 @@ export const resizeImage = async (
       }, 'image/png');
     };
 
-    img.onerror = () => {
+    img.onerror = (): void => {
       reject(new Error('Failed to load image'));
     };
 
@@ -89,7 +89,7 @@ export const composeBackground = async (
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
-    img.onload = () => {
+    img.onload = (): void => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -127,7 +127,7 @@ export const composeBackground = async (
       }, 'image/jpeg', 0.95);
     };
 
-    img.onerror = () => {
+    img.onerror = (): void => {
       reject(new Error('Failed to load image'));
     };
 

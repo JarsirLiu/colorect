@@ -22,8 +22,8 @@ export const EditorMain = ({
   const showFinalResult = finalImage !== null;
 
   return (
-    <main className="flex-1 bg-gray-50/50 p-8 flex flex-col relative overflow-hidden">
-      <div className="flex-1 bg-white rounded-[40px] border border-gray-100 shadow-inner flex items-center justify-center p-8 relative overflow-hidden">
+    <main className="flex-1 bg-gray-50/50 p-6 flex flex-col relative overflow-hidden">
+      <div className="flex-1 bg-white rounded-[40px] border border-gray-100 shadow-inner flex items-center justify-center p-6 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{
@@ -44,7 +44,6 @@ export const EditorMain = ({
                 <ImageDisplay
                   src={originalImage}
                   alt="原图"
-                  className="opacity-60"
                 />
               </div>
             </div>

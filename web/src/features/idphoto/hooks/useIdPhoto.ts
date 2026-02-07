@@ -3,12 +3,24 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+
 import { BgColor, PhotoSize, IdPhotoState } from '../types';
 import { DEFAULT_BG_COLOR, DEFAULT_PHOTO_SIZE } from '../constants';
 import { removeBackground } from '../api';
 import { generateIdPhoto, revokeBlobUrl } from '../utils/canvas';
+import { useDebounce } from '../../../utils/useDebounce';
 
-export const useIdPhoto = () => {
+interface UseIdPhotoReturn {
+  state: IdPhotoState;
+  handleFileUpload: (file: File) => Promise<void>;
+  updateBgColor: (bgColor: BgColor) => Promise<void>;
+  updatePhotoSize: (photoSize: PhotoSize) => Promise<void>;
+  handleDownload: () => void;
+  handleReset: () => void;
+  cleanup: () => void;
+}
+
+export const useIdPhoto = (): UseIdPhotoReturn => {
   // 状态管理
   const [state, setState] = useState<IdPhotoState>({
     originalImage: null,
@@ -30,13 +42,19 @@ export const useIdPhoto = () => {
   }, [state]);
 
   /**
-   * 处理文件上传
+   * 处理文件上传（防抖）
    */
-  const handleFileUpload = useCallback(async (file: File) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const handleFileUploadImmediate = useCallback(async (file: File) => {
+    const imageUrl = URL.createObjectURL(file);
+
+    setState(prev => ({
+      ...prev,
+      originalImage: imageUrl,
+      isLoading: true,
+      error: null,
+    }));
 
     try {
-      const imageUrl = URL.createObjectURL(file);
       const blob = await removeBackground(file);
       const transparentImageUrl = URL.createObjectURL(blob);
 
@@ -53,7 +71,6 @@ export const useIdPhoto = () => {
 
       setState(prev => ({
         ...prev,
-        originalImage: imageUrl,
         transparentImage: transparentImageUrl,
         finalImage: finalImageUrl,
         isLoading: false,
@@ -67,40 +84,45 @@ export const useIdPhoto = () => {
     }
   }, []);
 
+  const handleFileUpload = useDebounce(handleFileUploadImmediate, 300);
+
   /**
    * 更新背景色
    */
   const updateBgColor = useCallback(async (bgColor: BgColor) => {
     const currentTransparentImage = stateRef.current.transparentImage;
-    if (!currentTransparentImage) {
-      return;
-    }
 
-    setState(prev => ({ ...prev, bgColor, isLoading: true }));
+    // 先更新背景色状态
+    setState(prev => ({ ...prev, bgColor }));
 
-    try {
-      const finalImageUrl = await generateIdPhoto(
-        currentTransparentImage,
-        bgColor,
-        stateRef.current.photoSize
-      );
+    // 如果有透明图片，则重新生成证件照
+    if (currentTransparentImage) {
+      setState(prev => ({ ...prev, isLoading: true }));
 
-      if (previousFinalImageRef.current) {
-        revokeBlobUrl(previousFinalImageRef.current);
+      try {
+        const finalImageUrl = await generateIdPhoto(
+          currentTransparentImage,
+          bgColor,
+          stateRef.current.photoSize
+        );
+
+        if (previousFinalImageRef.current) {
+          revokeBlobUrl(previousFinalImageRef.current);
+        }
+        previousFinalImageRef.current = finalImageUrl;
+
+        setState(prev => ({
+          ...prev,
+          finalImage: finalImageUrl,
+          isLoading: false,
+        }));
+      } catch (error) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : '生成失败',
+        }));
       }
-      previousFinalImageRef.current = finalImageUrl;
-
-      setState(prev => ({
-        ...prev,
-        finalImage: finalImageUrl,
-        isLoading: false,
-      }));
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : '生成失败',
-      }));
     }
   }, []);
 
@@ -109,35 +131,38 @@ export const useIdPhoto = () => {
    */
   const updatePhotoSize = useCallback(async (photoSize: PhotoSize) => {
     const currentTransparentImage = stateRef.current.transparentImage;
-    if (!currentTransparentImage) {
-      return;
-    }
 
-    setState(prev => ({ ...prev, photoSize, isLoading: true }));
+    // 先更新尺寸状态
+    setState(prev => ({ ...prev, photoSize }));
 
-    try {
-      const finalImageUrl = await generateIdPhoto(
-        currentTransparentImage,
-        stateRef.current.bgColor,
-        photoSize
-      );
+    // 如果有透明图片，则重新生成证件照
+    if (currentTransparentImage) {
+      setState(prev => ({ ...prev, isLoading: true }));
 
-      if (previousFinalImageRef.current) {
-        revokeBlobUrl(previousFinalImageRef.current);
+      try {
+        const finalImageUrl = await generateIdPhoto(
+          currentTransparentImage,
+          stateRef.current.bgColor,
+          photoSize
+        );
+
+        if (previousFinalImageRef.current) {
+          revokeBlobUrl(previousFinalImageRef.current);
+        }
+        previousFinalImageRef.current = finalImageUrl;
+
+        setState(prev => ({
+          ...prev,
+          finalImage: finalImageUrl,
+          isLoading: false,
+        }));
+      } catch (error) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : '生成失败',
+        }));
       }
-      previousFinalImageRef.current = finalImageUrl;
-
-      setState(prev => ({
-        ...prev,
-        finalImage: finalImageUrl,
-        isLoading: false,
-      }));
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : '生成失败',
-      }));
     }
   }, []);
 
@@ -191,7 +216,7 @@ export const useIdPhoto = () => {
   /**
    * 清理资源
    */
-  const cleanup = useCallback(() => {
+  const cleanup = useCallback((): void => {
     const currentOriginalImage = stateRef.current.originalImage;
     const currentTransparentImage = stateRef.current.transparentImage;
     const currentFinalImage = stateRef.current.finalImage;
@@ -212,7 +237,7 @@ export const useIdPhoto = () => {
 
   // 组件卸载时清理资源
   useEffect(() => {
-    return () => {
+    return (): void => {
       const currentOriginalImage = stateRef.current.originalImage;
       const currentTransparentImage = stateRef.current.transparentImage;
       const currentFinalImage = stateRef.current.finalImage;

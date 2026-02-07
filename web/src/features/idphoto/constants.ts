@@ -33,16 +33,40 @@ export const BG_COLOR_OPTIONS: BgColorConfig[] = [
  */
 export const PHOTO_SIZE_OPTIONS: PhotoSizeConfig[] = [
   {
+    value: 'large1inch',
+    label: '大一寸',
+    size: { width: 390, height: 567 },
+    realSize: '33mm × 48mm'
+  },
+  {
     value: '1inch',
-    label: '1寸',
+    label: '一寸',
     size: { width: 295, height: 413 },
     realSize: '25mm × 35mm'
   },
   {
+    value: 'small1inch',
+    label: '小一寸',
+    size: { width: 260, height: 378 },
+    realSize: '22mm × 32mm'
+  },
+  {
+    value: 'large2inch',
+    label: '大二寸',
+    size: { width: 448, height: 626 },
+    realSize: '38mm × 53mm'
+  },
+  {
     value: '2inch',
-    label: '2寸',
+    label: '二寸',
     size: { width: 413, height: 579 },
     realSize: '35mm × 49mm'
+  },
+  {
+    value: 'small2inch',
+    label: '小二寸',
+    size: { width: 390, height: 567 },
+    realSize: '33mm × 48mm'
   },
   {
     value: 'small',

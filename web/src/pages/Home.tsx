@@ -4,7 +4,7 @@ export const Home = (): JSX.Element => {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 pt-6">
         <h1 className="text-5xl font-bold text-gray-900 mb-4">
           Colorect 智能图片处理工具
         </h1>

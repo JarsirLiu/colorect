@@ -4,6 +4,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -36,9 +37,7 @@ class Settings(BaseSettings):
     THREAD_POOL_SIZE: int = 2  # 线程池大小
     QUEUE_MAX_SIZE: int = 100  # 队列最大长度
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = ConfigDict(env_file=".env", case_sensitive=True)
 
     @property
     def cors_origins_list(self) -> list[str]:
